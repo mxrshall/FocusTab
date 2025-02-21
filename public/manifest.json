@@ -2,8 +2,12 @@
   "manifest_version": 3,
   "name": "FocusTab",
   "version": "1.0",
-  "permissions": ["tabs"],
-  "host_permissions": ["<all_urls>", "http://*/*", "https://*/*"],
+  "description": "Tracks time spent on websites.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage"
+  ],
   "background": {
     "service_worker": "background.js"
   },

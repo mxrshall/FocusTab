@@ -1,61 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
-const App = () => {
-    const [tabsInfo, setTabsInfo] = useState([]); // Stav na uchovávanie všetkých tabov
-    const [time, setTime] = useState(0); // Stav na uchovávanie času
-    const [isTimerRunning, setIsTimerRunning] = useState(false); // Stav na kontrolu, či časovač beží
+const formatTime = (ms) => {
+  let seconds = Math.floor(ms / 1000);
+  let minutes = Math.floor(seconds / 60);
+  let hours = Math.floor(minutes / 60);
 
-    // Funkcia na získanie informácií o všetkých kartách
-    const logTabsInfo = () => {
-        chrome.tabs.query({ currentWindow: true }, (tabs) => {
-            const allTabsInfo = tabs.map(tab => ({
-                id: tab.id,
-                url: tab.url
-            }));
-            setTabsInfo(allTabsInfo); // Nastavíme všetky taby do stavu
-        });
-    };
+  seconds = seconds % 60;
+  minutes = minutes % 60;
 
-    // Funkcia na spustenie a zastavenie časovača
-    const toggleTimer = () => {
-        if (isTimerRunning) {
-            chrome.runtime.sendMessage({ type: 'STOP_TIMER' }); // Posielame STOP_TIMER správu
-        } else {
-            chrome.runtime.sendMessage({ type: 'START_TIMER' }); // Posielame START_TIMER správu
-        }
-        setIsTimerRunning(!isTimerRunning); // Prepneme stav timeru
-    };
-
-    // Po zobrazení popupu dostávame aktuálny čas
-    useEffect(() => {
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === 'UPDATE_TIME') {
-                setTime(message.time); // Aktualizujeme čas podľa správ z pozadia
-            }
-        });
-        logTabsInfo(); // Načítame informácie o kartách pri načítaní
-    }, []);
-
-    return (
-        <div>
-            <button onClick={logTabsInfo}>Log All Tabs Info</button>
-            <h1>All Tab Info</h1>
-            {tabsInfo.length > 0 ? (
-                tabsInfo.map((tab, index) => (
-                    <div key={index}>
-                        <p>Tab ID: {tab.id}</p>
-                        <p>Tab URL: {tab.url}</p>
-                    </div>
-                ))
-            ) : (
-                <p>No tabs found</p>
-            )}
-            <h2>Timer: {time} seconds</h2> {/* Zobrazenie času */}
-            <button onClick={toggleTimer}>
-                {isTimerRunning ? 'Stop Timer' : 'Start Timer'}
-            </button>
-        </div>
-    );
+  let formattedTime = `${seconds}s`;
+  if (minutes > 0) { formattedTime = `${minutes}m ${formattedTime}`}
+  if (hours > 0) { formattedTime = `${hours}h ${formattedTime}`}
+  return formattedTime;
 };
+
+function App() {
+  const [times, setTimes] = useState({});
+
+  useEffect(() => {
+    const fetchTimes = () => {
+      chrome.runtime.sendMessage({ type: 'getTimes' }, (response) => {
+        setTimes(response);
+      });
+    };
+
+    fetchTimes();
+    const intervalId = setInterval(fetchTimes, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
+        <h1 className='text-3xl my-3'>FocusTab</h1>
+        <ul className='w-[90%]'>
+          {Object.entries(times).map(([domain, time]) => (
+            <li key={domain} className='w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm'>
+              <span>{domain}</span>
+              <span>{formatTime(time)}</span>
+            </li>
+          ))}
+        </ul>
+    </div>
+  );
+}
 
 export default App;

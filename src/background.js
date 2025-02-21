@@ -1,33 +1,62 @@
-let timerInterval;
-let time = 0;
+let activeTabId = null;
+let domainTimes = {};
+let activeDomain = null;
+let startTime = null;
 
-// Funkcia na spustenie časovača
-function startTimer() {
-    if (!timerInterval) {
-        timerInterval = setInterval(() => {
-            time += 1; // Zvýšime čas o 1 sekundu
-            console.log('Timer running: ', time); // Log pre debugging
-            chrome.runtime.sendMessage({ type: 'UPDATE_TIME', time }); // Posielame aktuálny čas do popupu
-        }, 1000);
-    }
+function getDomain(url) {
+  try {
+    const { hostname } = new URL(url);
+    return hostname;
+  } catch (e) {
+    return null;
+  }
 }
 
-// Funkcia na zastavenie časovača
-function stopTimer() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        console.log('Timer stopped'); // Log pre debugging
+function updateTimes() {
+  if (activeDomain && startTime) {
+    const currentTime = Date.now();
+    if (!domainTimes[activeDomain]) {
+      domainTimes[activeDomain] = 0;
     }
+    console.log('CT, ST', currentTime, startTime)
+    domainTimes[activeDomain] += currentTime - startTime;
+    startTime = currentTime;
+
+    chrome.storage.local.set({ domainTimes });
+  }
 }
 
-// Poslucháč na správy z popupu
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId, (tab) => {
+    updateTimes();
+    activeTabId = tabId;
+    activeDomain = getDomain(tab.url);
+    startTime = Date.now();
+  });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    if (tabId === activeTabId) {
+      updateTimes();
+      activeDomain = getDomain(tab.url);
+      startTime = Date.now();
+    }
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (tabId === activeTabId) {
+    updateTimes();
+    activeTabId = null;
+    activeDomain = null;
+    startTime = null;
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'START_TIMER') {
-        console.log('Received START_TIMER message');
-        startTimer(); // Spustíme časovač
-    } else if (message.type === 'STOP_TIMER') {
-        console.log('Received STOP_TIMER message');
-        stopTimer(); // Zastavíme časovač
-    }
+  if (message.type === 'getTimes') {
+    updateTimes();
+    sendResponse(domainTimes);
+  }
 });
