@@ -18,13 +18,19 @@ function updateTimes() {
     if (!domainTimes[activeDomain]) {
       domainTimes[activeDomain] = 0;
     }
-    console.log('CT, ST', currentTime, startTime)
     domainTimes[activeDomain] += currentTime - startTime;
     startTime = currentTime;
 
     chrome.storage.local.set({ domainTimes });
   }
 }
+
+// Načítať uložené časy pri spustení
+chrome.storage.local.get('domainTimes', (data) => {
+  if (data.domainTimes) {
+    domainTimes = data.domainTimes;
+  }
+});
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {

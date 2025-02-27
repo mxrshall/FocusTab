@@ -9,8 +9,8 @@ const formatTime = (ms) => {
   minutes = minutes % 60;
 
   let formattedTime = `${seconds}s`;
-  if (minutes > 0) { formattedTime = `${minutes}m ${formattedTime}`}
-  if (hours > 0) { formattedTime = `${hours}h ${formattedTime}`}
+  if (minutes > 0) formattedTime = `${minutes}m ${formattedTime}`;
+  if (hours > 0) formattedTime = `${hours}h ${formattedTime}`;
   return formattedTime;
 };
 
@@ -24,6 +24,13 @@ function App() {
       });
     };
 
+    // Načítať údaje z chrome.storage.local pri spustení
+    chrome.storage.local.get('domainTimes', (data) => {
+      if (data.domainTimes) {
+        setTimes(data.domainTimes);
+      }
+    });
+
     fetchTimes();
     const intervalId = setInterval(fetchTimes, 1000);
 
@@ -32,15 +39,15 @@ function App() {
 
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
-        <h1 className='text-3xl my-3'>FocusTab</h1>
-        <ul className='w-[90%]'>
-          {Object.entries(times).map(([domain, time]) => (
-            <li key={domain} className='w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm'>
-              <span>{domain}</span>
-              <span>{formatTime(time)}</span>
-            </li>
-          ))}
-        </ul>
+      <h1 className="text-3xl my-3">FocusTab</h1>
+      <ul className="w-[90%]">
+        {Object.entries(times).map(([domain, time]) => (
+          <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
+            <span>{domain}</span>
+            <span>{formatTime(time)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
