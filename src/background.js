@@ -2,49 +2,47 @@ let activeTabId = null;
 let domainTimes = {};
 let activeDomain = null;
 let startTime = null;
+let isTracking = true; // Predvolené zapnuté
 
 function getDomain(url) {
   try {
-    const { hostname } = new URL(url);
-    return hostname;
-  } catch (e) {
+    return new URL(url).hostname;
+  } catch {
     return null;
   }
 }
 
 function updateTimes() {
-  if (activeDomain && startTime) {
+  if (isTracking && activeDomain && startTime) {
     const currentTime = Date.now();
-    if (!domainTimes[activeDomain]) {
-      domainTimes[activeDomain] = 0;
-    }
-    domainTimes[activeDomain] += currentTime - startTime;
+    domainTimes[activeDomain] = (domainTimes[activeDomain] || 0) + (currentTime - startTime);
     startTime = currentTime;
 
     chrome.storage.local.set({ domainTimes });
   }
 }
 
-// Načítať uložené časy pri spustení
-chrome.storage.local.get('domainTimes', (data) => {
-  if (data.domainTimes) {
-    domainTimes = data.domainTimes;
-  }
+// Načítať uložené údaje pri spustení
+chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
+  if (data.domainTimes) domainTimes = data.domainTimes;
+  if (data.isTracking !== undefined) isTracking = data.isTracking;
 });
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {
     updateTimes();
-    activeTabId = tabId;
-    activeDomain = getDomain(tab.url);
-    startTime = Date.now();
+    if (isTracking) {
+      activeTabId = tabId;
+      activeDomain = getDomain(tab.url);
+      startTime = Date.now();
+    }
   });
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    if (tabId === activeTabId) {
-      updateTimes();
+  if (changeInfo.status === 'complete' && tabId === activeTabId) {
+    updateTimes();
+    if (isTracking) {
       activeDomain = getDomain(tab.url);
       startTime = Date.now();
     }
@@ -60,9 +58,20 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   }
 });
 
+// Spracovanie správ z popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'getTimes') {
     updateTimes();
     sendResponse(domainTimes);
+  } else if (message.type === 'toggleTracking') {
+    updateTimes(); // Uloží aktuálny čas pred prepnutím
+    isTracking = message.isTracking;
+    chrome.storage.local.set({ isTracking });
+
+    if (!isTracking) {
+      startTime = null; // Reset startTime pri vypnutí sledovania
+    } else {
+      startTime = Date.now(); // Reštart sledovania bez dodatočného času
+    }
   }
 });

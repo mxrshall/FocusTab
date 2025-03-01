@@ -16,6 +16,7 @@ const formatTime = (ms) => {
 
 function App() {
   const [times, setTimes] = useState({});
+  const [isTracking, setIsTracking] = useState(true);
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -24,11 +25,10 @@ function App() {
       });
     };
 
-    // Načítať údaje z chrome.storage.local pri spustení
-    chrome.storage.local.get('domainTimes', (data) => {
-      if (data.domainTimes) {
-        setTimes(data.domainTimes);
-      }
+    // Načítať uložené časy a stav sledovania pri spustení
+    chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
+      if (data.domainTimes) setTimes(data.domainTimes);
+      if (data.isTracking !== undefined) setIsTracking(data.isTracking);
     });
 
     fetchTimes();
@@ -37,9 +37,29 @@ function App() {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Prepína sledovanie ON/OFF
+  const toggleTracking = () => {
+    const newTrackingState = !isTracking;
+    setIsTracking(newTrackingState);
+    chrome.storage.local.set({ isTracking: newTrackingState });
+
+    // Poslať do background skriptu, aby prestal sledovať
+    chrome.runtime.sendMessage({ type: 'toggleTracking', isTracking: newTrackingState });
+  };
+
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
       <h1 className="text-3xl my-3">FocusTab</h1>
+
+      <div className="flex space-x-3">
+        <button 
+          onClick={toggleTracking} 
+          className={`px-4 py-2 mb-3 rounded ${isTracking ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}`}
+        >
+          {isTracking ? 'Vypnúť meranie' : 'Zapnúť meranie'}
+        </button>
+      </div>
+
       <ul className="w-[90%]">
         {Object.entries(times).map(([domain, time]) => (
           <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
