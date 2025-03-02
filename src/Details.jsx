@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SiGoogleanalytics } from "react-icons/si";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
 
 const formatTime = (ms) => {
   let seconds = Math.floor(ms / 1000);
@@ -18,6 +20,8 @@ const formatTime = (ms) => {
 function Details({ onBack }) {
   const [times, setTimes] = useState({});
   const [isTracking, setIsTracking] = useState(true);
+
+  ChartJS.register(ArcElement, Tooltip, Legend);
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -69,6 +73,22 @@ function Details({ onBack }) {
           </li>
         ))}
       </ul>
+      <Doughnut
+        data={{
+          labels: ['1', '2', '3'],
+          datasets: [
+            {
+              label: "Count",
+              data: [100, 15, 95],
+              backgroundColor: [
+                "rgba(229, 161, 43, 0.8)",
+                "rgba(24, 100, 129, 0.8)",
+                "rgba(43, 23, 249, 0.8)"
+              ],
+            }
+          ]
+        }}
+      />
       <div className='absolute top-5 right-5' onClick={onBack}>
         <SiGoogleanalytics color='green' size='20' />
       </div>
