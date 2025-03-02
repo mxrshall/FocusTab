@@ -2,7 +2,7 @@ let activeTabId = null;
 let domainTimes = {};
 let activeDomain = null;
 let startTime = null;
-let isTracking = true; // Predvolené zapnuté
+let isTracking = false; // Predvolene vypnuté
 
 function getDomain(url) {
   try {
@@ -17,7 +17,6 @@ function updateTimes() {
     const currentTime = Date.now();
     domainTimes[activeDomain] = (domainTimes[activeDomain] || 0) + (currentTime - startTime);
     startTime = currentTime;
-
     chrome.storage.local.set({ domainTimes });
   }
 }
@@ -25,27 +24,29 @@ function updateTimes() {
 // Načítať uložené údaje pri spustení
 chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
   if (data.domainTimes) domainTimes = data.domainTimes;
-  if (data.isTracking !== undefined) isTracking = data.isTracking;
+
+  if (data.isTracking === undefined) {
+    // Ak sa hodnota isTracking ešte nikdy neuložila, nastavíme ju na false
+    chrome.storage.local.set({ isTracking: false });
+  } else {
+    isTracking = data.isTracking;
+  }
 });
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {
     updateTimes();
-    if (isTracking) {
-      activeTabId = tabId;
-      activeDomain = getDomain(tab.url);
-      startTime = Date.now();
-    }
+    activeTabId = tabId;
+    activeDomain = getDomain(tab.url);
+    startTime = isTracking ? Date.now() : null; // Ak nie je tracking, nezačne merať
   });
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tabId === activeTabId) {
     updateTimes();
-    if (isTracking) {
-      activeDomain = getDomain(tab.url);
-      startTime = Date.now();
-    }
+    activeDomain = getDomain(tab.url);
+    startTime = isTracking ? Date.now() : null;
   }
 });
 
@@ -71,7 +72,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isTracking) {
       startTime = null; // Reset startTime pri vypnutí sledovania
     } else {
-      startTime = Date.now(); // Reštart sledovania bez dodatočného času
+      startTime = Date.now(); // Resetuje startTime pri zapnutí
     }
   }
 });

@@ -24,18 +24,18 @@ function App() {
         setTimes(response);
       });
     };
-
-    // Načítať uložené časy a stav sledovania pri spustení
+  
     chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
       if (data.domainTimes) setTimes(data.domainTimes);
-      if (data.isTracking !== undefined) setIsTracking(data.isTracking);
+      setIsTracking(data.isTracking ?? false); // Predvolene false, ak nie je v storage
     });
-
+  
     fetchTimes();
     const intervalId = setInterval(fetchTimes, 1000);
-
+  
     return () => clearInterval(intervalId);
   }, []);
+  
 
   // Prepína sledovanie ON/OFF
   const toggleTracking = () => {
@@ -54,7 +54,7 @@ function App() {
       <div className="flex space-x-3">
         <button 
           onClick={toggleTracking} 
-          className={`px-4 py-2 mb-3 rounded ${isTracking ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}`}
+          className={`px-4 py-2 mb-3 rounded ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
         >
           {isTracking ? 'Vypnúť meranie' : 'Zapnúť meranie'}
         </button>
