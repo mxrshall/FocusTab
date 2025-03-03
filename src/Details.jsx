@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SiGoogleanalytics } from "react-icons/si";
+import { FaHome } from "react-icons/fa";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
@@ -90,7 +90,7 @@ function Details({ onBack }) {
         }}
       />
       <div className='absolute top-5 right-5' onClick={onBack}>
-        <SiGoogleanalytics color='green' size='20' />
+        <FaHome color='green' size='20' />
       </div>
     </div>
   );
