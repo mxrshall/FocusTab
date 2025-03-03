@@ -3,6 +3,8 @@ import { FaHome } from "react-icons/fa";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 const formatTime = (ms) => {
   let seconds = Math.floor(ms / 1000);
   let minutes = Math.floor(seconds / 60);
@@ -17,11 +19,14 @@ const formatTime = (ms) => {
   return formattedTime;
 };
 
+const generateRandomHexColor = () => {
+  return `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+};
+
 function Details({ onBack }) {
   const [times, setTimes] = useState({});
   const [isTracking, setIsTracking] = useState(true);
-
-  ChartJS.register(ArcElement, Tooltip, Legend);
+  const [colors, setColors] = useState({});
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -32,7 +37,7 @@ function Details({ onBack }) {
   
     chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
       if (data.domainTimes) setTimes(data.domainTimes);
-      setIsTracking(data.isTracking ?? false); // Predvolene false, ak nie je v storage
+      setIsTracking(data.isTracking ?? false);
     });
   
     fetchTimes();
@@ -41,54 +46,56 @@ function Details({ onBack }) {
     return () => clearInterval(intervalId);
   }, []);
   
+  useEffect(() => {
+    setColors((prevColors) => {
+      const newColors = { ...prevColors };
+      Object.keys(times).forEach(domain => {
+        if (!newColors[domain]) {
+          newColors[domain] = generateRandomHexColor();
+        }
+      });
+      return newColors;
+    });
+  }, [times]);
 
-  // Prepína sledovanie ON/OFF
   const toggleTracking = () => {
     const newTrackingState = !isTracking;
     setIsTracking(newTrackingState);
     chrome.storage.local.set({ isTracking: newTrackingState });
-
-    // Poslať do background skriptu, aby prestal sledovať
     chrome.runtime.sendMessage({ type: 'toggleTracking', isTracking: newTrackingState });
   };
 
+  const domains = Object.keys(times);
+  const timeValues = Object.values(times);
+  
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
-      <h1 className="text-3xl my-3">FocusTabbb</h1>
-
-      <div className="flex space-x-3">
-        <button 
-          onClick={toggleTracking} 
-          className={`px-4 py-2 mb-3 rounded ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-        >
-          {isTracking ? 'Vypnúť meranie' : 'Zapnúť meranie'}
-        </button>
-      </div>
+      <h1 className="text-3xl my-3">FocusTab</h1>
 
       <ul className="w-[90%]">
-        {Object.entries(times).map(([domain, time]) => (
-          <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
+        {domains.map((domain, index) => (
+          <li key={index} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
             <span>{domain}</span>
-            <span>{formatTime(time)}</span>
+            <span>{formatTime(timeValues[index])}</span>
           </li>
         ))}
       </ul>
-      <Doughnut
-        data={{
-          labels: ['1', '2', '3'],
-          datasets: [
-            {
-              label: "Count",
-              data: [100, 15, 95],
-              backgroundColor: [
-                "rgba(229, 161, 43, 0.8)",
-                "rgba(24, 100, 129, 0.8)",
-                "rgba(43, 23, 249, 0.8)"
-              ],
-            }
-          ]
-        }}
-      />
+      
+      {domains.length > 0 && (
+        <Doughnut
+          data={{
+            labels: domains,
+            datasets: [
+              {
+                label: "Čas strávený na stránkach",
+                data: timeValues,
+                backgroundColor: domains.map(domain => colors[domain] || '#000000'),
+              }
+            ]
+          }}
+        />
+      )}
+      
       <div className='absolute top-5 right-5' onClick={onBack}>
         <FaHome color='green' size='20' />
       </div>
