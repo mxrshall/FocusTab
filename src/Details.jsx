@@ -65,31 +65,32 @@ function Details({ onBack }) {
     chrome.runtime.sendMessage({ type: 'toggleTracking', isTracking: newTrackingState });
   };
 
-  const domains = Object.keys(times);
-  const timeValues = Object.values(times);
-  
+  // Zoradenie domén podľa času
+  const sortedDomains = Object.keys(times).sort((a, b) => times[b] - times[a]);
+  const sortedTimeValues = sortedDomains.map(domain => times[domain]);
+
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
       <h1 className="text-3xl my-3">FocusTab</h1>
 
       <ul className="w-[90%]">
-        {domains.map((domain, index) => (
+        {sortedDomains.map((domain, index) => (
           <li key={index} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
             <span>{domain}</span>
-            <span>{formatTime(timeValues[index])}</span>
+            <span>{formatTime(sortedTimeValues[index])}</span>
           </li>
         ))}
       </ul>
       
-      {domains.length > 0 && (
+      {sortedDomains.length > 0 && (
         <Doughnut
           data={{
-            labels: domains,
+            labels: sortedDomains,
             datasets: [
               {
                 label: "Čas strávený na stránkach",
-                data: timeValues,
-                backgroundColor: domains.map(domain => colors[domain] || '#000000'),
+                data: sortedTimeValues,
+                backgroundColor: sortedDomains.map(domain => colors[domain] || '#000000'),
               }
             ]
           }}
