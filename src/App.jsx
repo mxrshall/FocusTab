@@ -18,19 +18,24 @@ const formatTime = (ms) => {
 
 function App() {
   const [times, setTimes] = useState({});
+  const [tabClicks, setTabClicks] = useState({});
   const [isTracking, setIsTracking] = useState(true);
   const [view, setView] = useState("home");
 
   useEffect(() => {
     const fetchTimes = () => {
       chrome.runtime.sendMessage({ type: 'getTimes' }, (response) => {
-        setTimes(response);
+        if (response) {
+          setTimes(response.domainTimes || {});
+          setTabClicks(response.tabClicks || {});
+        }
       });
     };
   
-    chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
+    chrome.storage.local.get(['domainTimes', 'tabClicks', 'isTracking'], (data) => {
       if (data.domainTimes) setTimes(data.domainTimes);
-      setIsTracking(data.isTracking ?? false); // Predvolene false, ak nie je v storage
+      if (data.tabClicks) setTabClicks(data.tabClicks);
+      setIsTracking(data.isTracking ?? false);
     });
   
     fetchTimes();
@@ -38,7 +43,6 @@ function App() {
   
     return () => clearInterval(intervalId);
   }, []);
-  
 
   // Prepína sledovanie ON/OFF
   const toggleTracking = () => {
@@ -66,7 +70,11 @@ function App() {
           <ul className="w-[90%]">
             {Object.entries(times).map(([domain, time]) => (
               <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
-                <span>{domain}</span>
+                <div>
+                  <span>{domain}</span>
+                  <br />
+                  <span className="text-gray-400 text-sm">Prekliky: {tabClicks[domain] || 0}</span>
+                </div>
                 <span>{formatTime(time)}</span>
               </li>
             ))}

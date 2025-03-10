@@ -31,43 +31,39 @@ function Details({ onBack }) {
   useEffect(() => {
     const fetchTimes = () => {
       chrome.runtime.sendMessage({ type: 'getTimes' }, (response) => {
-        setTimes(response);
+        if (response) {
+          setTimes(response.domainTimes || {});
+        }
       });
     };
-  
+
     chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
       if (data.domainTimes) setTimes(data.domainTimes);
       setIsTracking(data.isTracking ?? false);
     });
-  
+
     fetchTimes();
     const intervalId = setInterval(fetchTimes, 1000);
-  
+
     return () => clearInterval(intervalId);
   }, []);
-  
+
+  // Nastavenie farieb pre domény
   useEffect(() => {
     setColors((prevColors) => {
       const newColors = { ...prevColors };
-      Object.keys(times).forEach(domain => {
+      Object.keys(times).forEach((domain) => {
         if (!newColors[domain]) {
           newColors[domain] = generateRandomHexColor();
         }
       });
       return newColors;
     });
-  }, [times]);
-
-  const toggleTracking = () => {
-    const newTrackingState = !isTracking;
-    setIsTracking(newTrackingState);
-    chrome.storage.local.set({ isTracking: newTrackingState });
-    chrome.runtime.sendMessage({ type: 'toggleTracking', isTracking: newTrackingState });
-  };
+  }, [Object.keys(times).join(",")]); // Použitie unikátneho kľúča pre aktualizáciu
 
   // Zoradenie domén podľa času
   const sortedDomains = Object.keys(times).sort((a, b) => times[b] - times[a]);
-  const sortedTimeValues = sortedDomains.map(domain => times[domain]);
+  const sortedTimeValues = sortedDomains.map((domain) => times[domain]);
 
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
@@ -81,7 +77,7 @@ function Details({ onBack }) {
           </li>
         ))}
       </ul>
-      
+
       {sortedDomains.length > 0 && (
         <Doughnut
           data={{
@@ -90,15 +86,15 @@ function Details({ onBack }) {
               {
                 label: "Čas strávený na stránkach",
                 data: sortedTimeValues,
-                backgroundColor: sortedDomains.map(domain => colors[domain] || '#000000'),
-              }
-            ]
+                backgroundColor: sortedDomains.map((domain) => colors[domain] || '#000000'),
+              },
+            ],
           }}
         />
       )}
-      
-      <div className='absolute top-5 right-5' onClick={onBack}>
-        <FaHome color='green' size='20' />
+
+      <div className="absolute top-5 right-5 cursor-pointer" onClick={onBack}>
+        <FaHome color="green" size="20" />
       </div>
     </div>
   );

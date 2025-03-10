@@ -1,8 +1,9 @@
 let activeTabId = null;
 let domainTimes = {};
+let tabClicks = {}; // Počet preklikov medzi kartami
 let activeDomain = null;
 let startTime = null;
-let isTracking = false; // Predvolene vypnuté
+let isTracking = false;
 
 function getDomain(url) {
   try {
@@ -22,11 +23,11 @@ function updateTimes() {
 }
 
 // Načítať uložené údaje pri spustení
-chrome.storage.local.get(['domainTimes', 'isTracking'], (data) => {
+chrome.storage.local.get(['domainTimes', 'isTracking', 'tabClicks'], (data) => {
   if (data.domainTimes) domainTimes = data.domainTimes;
-
+  if (data.tabClicks) tabClicks = data.tabClicks;
+  
   if (data.isTracking === undefined) {
-    // Ak sa hodnota isTracking ešte nikdy neuložila, nastavíme ju na false
     chrome.storage.local.set({ isTracking: false });
   } else {
     isTracking = data.isTracking;
@@ -38,41 +39,30 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     updateTimes();
     activeTabId = tabId;
     activeDomain = getDomain(tab.url);
-    startTime = isTracking ? Date.now() : null; // Ak nie je tracking, nezačne merať
-  });
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tabId === activeTabId) {
-    updateTimes();
-    activeDomain = getDomain(tab.url);
     startTime = isTracking ? Date.now() : null;
-  }
-});
 
-chrome.tabs.onRemoved.addListener((tabId) => {
-  if (tabId === activeTabId) {
-    updateTimes();
-    activeTabId = null;
-    activeDomain = null;
-    startTime = null;
-  }
+    // Zvýšiť počet preklikov pre doménu
+    if (activeDomain) {
+      tabClicks[activeDomain] = (tabClicks[activeDomain] || 0) + 1;
+      chrome.storage.local.set({ tabClicks });
+    }
+  });
 });
 
 // Spracovanie správ z popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'getTimes') {
     updateTimes();
-    sendResponse(domainTimes);
+    sendResponse({ domainTimes, tabClicks });
   } else if (message.type === 'toggleTracking') {
-    updateTimes(); // Uloží aktuálny čas pred prepnutím
+    updateTimes();
     isTracking = message.isTracking;
     chrome.storage.local.set({ isTracking });
 
     if (!isTracking) {
-      startTime = null; // Reset startTime pri vypnutí sledovania
+      startTime = null;
     } else {
-      startTime = Date.now(); // Resetuje startTime pri zapnutí
+      startTime = Date.now();
     }
   }
 });
