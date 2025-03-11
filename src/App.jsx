@@ -70,11 +70,8 @@ function App() {
           <ul className="w-[90%]">
             {Object.entries(times).map(([domain, time]) => (
               <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
-                <div>
-                  <span>{domain}</span>
-                  <br />
-                  <span className="text-gray-400 text-sm">Prekliky: {tabClicks[domain] || 0}</span>
-                </div>
+                <span>{domain}</span>
+                <br/>
                 <span>{formatTime(time)}</span>
               </li>
             ))}
