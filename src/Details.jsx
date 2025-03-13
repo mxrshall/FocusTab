@@ -53,16 +53,14 @@ function Details({ onBack }) {
   const sortedTimeValues = sortedDomains.map((domain) => times[domain]);
 
   return (
-    <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
-      <h1 className="text-3xl my-3">FocusTab</h1>
-
+    <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white pt-14">
       <ul className="w-[90%]">
         {sortedDomains.map((domain) => (
           <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
             <div>
               <span>{domain}</span>
               <br />
-              <span className="text-gray-400 text-sm">Prekliky: {tabClicks[domain] || 0}</span>
+              <span className="text-gray-400 text-sm">Preklik: {tabClicks[domain] || 0}</span>
             </div>
             <span>{formatTime(times[domain])}</span>
           </li>
@@ -85,7 +83,7 @@ function Details({ onBack }) {
       )}
 
       <div className="absolute top-5 right-5 cursor-pointer" onClick={onBack}>
-        <FaHome color="green" size="20" />
+        <FaHome color="#2563eb" size="20" />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { SiGoogleanalytics } from "react-icons/si";
+import { GrAnalytics } from "react-icons/gr";
 import Details from "./Details";
+import { Switch } from '@headlessui/react';
 
 const formatTime = (ms) => {
   let seconds = Math.floor(ms / 1000);
@@ -21,6 +22,7 @@ function App() {
   const [tabClicks, setTabClicks] = useState({});
   const [isTracking, setIsTracking] = useState(true);
   const [view, setView] = useState("home");
+  const [enabled, setEnabled] = useState(true);
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -31,16 +33,17 @@ function App() {
         }
       });
     };
-  
+
     chrome.storage.local.get(['domainTimes', 'tabClicks', 'isTracking'], (data) => {
       if (data.domainTimes) setTimes(data.domainTimes);
       if (data.tabClicks) setTabClicks(data.tabClicks);
       setIsTracking(data.isTracking ?? false);
+      setEnabled(data.isTracking ?? false);
     });
-  
+
     fetchTimes();
     const intervalId = setInterval(fetchTimes, 1000);
-  
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -48,6 +51,7 @@ function App() {
   const toggleTracking = () => {
     const newTrackingState = !isTracking;
     setIsTracking(newTrackingState);
+    setEnabled(newTrackingState);
     chrome.storage.local.set({ isTracking: newTrackingState });
 
     // Poslať do background skriptu, aby prestal sledovať
@@ -58,26 +62,24 @@ function App() {
     <div>
       {view === "home" ? (
         <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
-          <h1 className="text-3xl my-3">FocusTab</h1>
-          <div className="flex space-x-3">
-            <button 
-              onClick={toggleTracking} 
-              className={`px-4 py-2 mb-3 rounded ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+            <Switch
+              checked={enabled}
+              onChange={() => { setEnabled(!enabled); toggleTracking(); }}
+              className={`${enabled ? 'bg-blue-600' : 'bg-[#3f3f3f]'} group inline-flex h-6 w-11 items-center rounded-full transition my-4`}
             >
-              {isTracking ? 'Vypnúť meranie' : 'Zapnúť meranie'}
-            </button>
-          </div>
+              <span className={`${enabled ? 'translate-x-6' : 'translate-x-1'} size-4 rounded-full bg-white transition`} />
+            </Switch>
           <ul className="w-[90%]">
             {Object.entries(times).map(([domain, time]) => (
               <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
                 <span>{domain}</span>
-                <br/>
+                <br />
                 <span>{formatTime(time)}</span>
               </li>
             ))}
           </ul>
           <div className='absolute top-5 right-5' onClick={() => setView("details")}>
-            <SiGoogleanalytics color='green' size='20' />
+            <GrAnalytics color='#2563eb' size='20' />
           </div>
         </div>
       ) : (
