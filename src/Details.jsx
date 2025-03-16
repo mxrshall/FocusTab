@@ -22,6 +22,7 @@ function Details({ onBack }) {
   const [times, setTimes] = useState({});
   const [tabClicks, setTabClicks] = useState({});
   const [colors, setColors] = useState({});
+  const [value, setValue] = useState("");
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -49,11 +50,20 @@ function Details({ onBack }) {
     });
   }, [times]);
 
-  const sortedDomains = Object.keys(times).sort((a, b) => times[b] - times[a]);
+  function handleChange(e) {
+    setValue(e.target.value);
+  }
+
+  const filteredDomains = Object.keys(times).filter((domain) =>
+    domain.toLowerCase().includes(value.toLowerCase())
+  );
+
+  const sortedDomains = filteredDomains.sort((a, b) => times[b] - times[a]);
   const sortedTimeValues = sortedDomains.map((domain) => times[domain]);
 
   return (
-    <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white pt-14">
+    <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
+      <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={handleChange}/>
       <ul className="w-[90%]">
         {sortedDomains.map((domain) => (
           <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
