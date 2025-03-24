@@ -1,9 +1,10 @@
 let activeTabId = null;
 let domainTimes = {};
-let tabClicks = {}; // Počet preklikov medzi kartami
+let tabClicks = {};
 let activeDomain = null;
 let startTime = null;
 let isTracking = false;
+let intervalId = null; // ID intervalu pre kontrolu
 
 function getDomain(url) {
   try {
@@ -18,7 +19,22 @@ function updateTimes() {
     const currentTime = Date.now();
     domainTimes[activeDomain] = (domainTimes[activeDomain] || 0) + (currentTime - startTime);
     startTime = currentTime;
-    chrome.storage.local.set({ domainTimes });
+    
+    chrome.storage.local.set({ domainTimes }, () => {
+      if (chrome.runtime.lastError) {
+        console.error("Chyba pri ukladaní času:", chrome.runtime.lastError);
+      } else {
+        console.log("Uložený čas pre", activeDomain, ":", domainTimes[activeDomain]);
+      }
+    });
+  }
+}
+
+// Spustiť interval iba raz
+function startTrackingInterval() {
+  if (!intervalId) {
+    console.log("Spúšťam interval pre sledovanie...");
+    intervalId = setInterval(updateTimes, 5000);
   }
 }
 
@@ -27,10 +43,11 @@ chrome.storage.local.get(['domainTimes', 'isTracking', 'tabClicks'], (data) => {
   if (data.domainTimes) domainTimes = data.domainTimes;
   if (data.tabClicks) tabClicks = data.tabClicks;
   
-  if (data.isTracking === undefined) {
-    chrome.storage.local.set({ isTracking: false });
-  } else {
-    isTracking = data.isTracking;
+  isTracking = data.isTracking ?? false;
+  console.log("Načítaný isTracking:", isTracking);
+  
+  if (isTracking) {
+    startTrackingInterval();
   }
 });
 
@@ -41,7 +58,6 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     activeDomain = getDomain(tab.url);
     startTime = isTracking ? Date.now() : null;
 
-    // Zvýšiť počet preklikov pre doménu
     if (activeDomain) {
       tabClicks[activeDomain] = (tabClicks[activeDomain] || 0) + 1;
       chrome.storage.local.set({ tabClicks });
@@ -59,10 +75,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     isTracking = message.isTracking;
     chrome.storage.local.set({ isTracking });
 
+    console.log("Toggle tracking:", isTracking);
     if (!isTracking) {
+      clearInterval(intervalId);
+      intervalId = null;
       startTime = null;
     } else {
       startTime = Date.now();
+      startTrackingInterval();
     }
   }
 });
