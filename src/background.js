@@ -4,7 +4,7 @@ let tabClicks = {};
 let activeDomain = null;
 let startTime = null;
 let isTracking = false;
-let intervalId = null; // ID intervalu pre kontrolu
+let intervalId = null;
 
 function getDomain(url) {
   try {
@@ -19,33 +19,27 @@ function updateTimes() {
     const currentTime = Date.now();
     domainTimes[activeDomain] = (domainTimes[activeDomain] || 0) + (currentTime - startTime);
     startTime = currentTime;
-    
+
     chrome.storage.local.set({ domainTimes }, () => {
       if (chrome.runtime.lastError) {
         console.error("Chyba pri ukladaní času:", chrome.runtime.lastError);
-      } else {
-        console.log("Uložený čas pre", activeDomain, ":", domainTimes[activeDomain]);
       }
     });
   }
 }
 
-// Spustiť interval iba raz
 function startTrackingInterval() {
   if (!intervalId) {
-    console.log("Spúšťam interval pre sledovanie...");
     intervalId = setInterval(updateTimes, 5000);
   }
 }
 
-// Načítať uložené údaje pri spustení
+// Načítanie uložených dát pri štarte
 chrome.storage.local.get(['domainTimes', 'isTracking', 'tabClicks'], (data) => {
   if (data.domainTimes) domainTimes = data.domainTimes;
-  if (data.tabClicks) tabClicks = data.tabClicks;
+  if (data.tabClicks) tabClicks = data.tabClicks;  // 🔹 Obnova tabClicks
   
   isTracking = data.isTracking ?? false;
-  console.log("Načítaný isTracking:", isTracking);
-  
   if (isTracking) {
     startTrackingInterval();
   }
@@ -60,22 +54,34 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 
     if (activeDomain) {
       tabClicks[activeDomain] = (tabClicks[activeDomain] || 0) + 1;
-      chrome.storage.local.set({ tabClicks });
+      
+      // Uloženie `tabClicks` do `chrome.storage.local`
+      chrome.storage.local.set({ tabClicks }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Chyba pri ukladaní preklikov:", chrome.runtime.lastError);
+        }
+      });
     }
   });
 });
 
-// Spracovanie správ z popup.js
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (tabId === activeTabId && changeInfo.url) {
+    updateTimes();
+    activeDomain = getDomain(changeInfo.url);
+    startTime = isTracking ? Date.now() : null;
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'getTimes') {
     updateTimes();
-    sendResponse({ domainTimes, tabClicks });
+    sendResponse({ domainTimes, tabClicks }); // 🔹 Odosielanie `tabClicks`
   } else if (message.type === 'toggleTracking') {
     updateTimes();
     isTracking = message.isTracking;
     chrome.storage.local.set({ isTracking });
 
-    console.log("Toggle tracking:", isTracking);
     if (!isTracking) {
       clearInterval(intervalId);
       intervalId = null;
@@ -84,5 +90,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       startTime = Date.now();
       startTrackingInterval();
     }
+  }
+});
+
+// Pri štarte rozšírenia nastavíme `activeDomain`
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (tabs.length > 0) {
+    const tab = tabs[0];
+    activeTabId = tab.id;
+    activeDomain = getDomain(tab.url);
+    startTime = isTracking ? Date.now() : null;
   }
 });
