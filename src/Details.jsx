@@ -60,11 +60,18 @@ function Details({ onBack }) {
 
   const sortedDomains = filteredDomains.sort((a, b) => times[b] - times[a]);
   const sortedTimeValues = sortedDomains.map((domain) => times[domain]);
+  const totalTime = Object.values(times).reduce((acc, curr) => acc + curr, 0);
 
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
       <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={handleChange}/>
       <ul className="w-[90%]">
+        <li className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm font-bold">
+            <div>
+              <span>Celkový čas:</span>
+            </div>
+            <span>{formatTime(totalTime)}</span>
+        </li>
         {sortedDomains.map((domain) => (
           <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
             <div>
