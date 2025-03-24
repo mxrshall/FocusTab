@@ -68,7 +68,7 @@ function Details({ onBack }) {
       <ul className="w-[90%]">
         <li className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm font-bold">
             <div>
-              <span>Celkový čas:</span>
+              <span>Celkový čas</span>
             </div>
             <span>{formatTime(totalTime)}</span>
         </li>
