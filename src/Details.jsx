@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { FaHome } from "react-icons/fa";
+import { GrAnalytics } from "react-icons/gr";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { Switch } from '@headlessui/react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -23,6 +24,8 @@ function Details({ onBack }) {
   const [tabClicks, setTabClicks] = useState({});
   const [colors, setColors] = useState({});
   const [value, setValue] = useState("");
+  const [enabled, setEnabled] = useState(false); // Predvolene vypnuté
+  const [isTracking, setIsTracking] = useState(false); // Predvolene vypnuté
 
   useEffect(() => {
     const fetchTimes = () => {
@@ -54,6 +57,19 @@ function Details({ onBack }) {
     setValue(e.target.value);
   }
 
+  // Prepína sledovanie ON/OFF
+  const toggleTracking = () => {
+    const newTrackingState = !isTracking;
+    setIsTracking(newTrackingState);
+    setEnabled(newTrackingState);
+    
+    // Uloženie novej hodnoty do storage
+    chrome.storage.local.set({ isTracking: newTrackingState });
+
+    // Poslať do background skriptu
+    chrome.runtime.sendMessage({ type: 'toggleTracking', isTracking: newTrackingState });
+  };
+
   const filteredDomains = Object.keys(times).filter((domain) =>
     domain.toLowerCase().includes(value.toLowerCase())
   );
@@ -64,7 +80,17 @@ function Details({ onBack }) {
 
   return (
     <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
-      <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={handleChange}/>
+      <div className='w-full flex justify-between items-center px-6'>
+        <Switch
+          checked={enabled}
+          onChange={() => { setEnabled(!enabled); toggleTracking(); }}
+          className={`${enabled ? 'bg-blue-600' : 'bg-[#3f3f3f]'} group inline-flex h-6 w-11 items-center rounded-full transition my-4`}
+        >
+          <span className={`${enabled ? 'translate-x-6' : 'translate-x-1'} size-4 rounded-full bg-white transition`} />
+        </Switch>
+        <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={handleChange}/>
+        <GrAnalytics color='#2563eb' size='20' onClick={onBack} />
+      </div>
       <ul className="w-[90%]">
         <li className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm font-bold">
             <div>
@@ -76,8 +102,6 @@ function Details({ onBack }) {
           <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
             <div>
               <span>{domain}</span>
-              <br />
-              <span className="text-gray-400 text-sm">Preklik: {tabClicks[domain] || 0}</span>
             </div>
             <span>{formatTime(times[domain])}</span>
           </li>
@@ -98,10 +122,6 @@ function Details({ onBack }) {
           }}
         />
       )}
-
-      <div className="absolute top-5 right-5 cursor-pointer" onClick={onBack}>
-        <FaHome color="#2563eb" size="20" />
-      </div>
     </div>
   );
 }
