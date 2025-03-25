@@ -90,6 +90,7 @@ function Details({ onBack }) {
           </div>
           {sortedDomains.length > 0 && (
             <Doughnut
+              className='mb-2'
               data={{
                 labels: sortedDomains,
                 datasets: [
@@ -97,8 +98,26 @@ function Details({ onBack }) {
                   label: "Čas strávený na stránkach",
                   data: sortedTimeValues,
                   backgroundColor: sortedDomains.map((domain) => colors[domain]),
+                  borderColor: sortedDomains.map((domain) => colors[domain]),
                 },
                 ],
+              }}
+              options={{
+                plugins: {
+                  legend: {
+                    position: 'bottom', // Zobraziť legendu pod grafom
+                    labels: {
+                      boxWidth: 12,
+                      boxHeight: 12,
+                      padding: 10,
+                      font: {
+                        size: 14,
+                        weight: 'bold',
+                        family: 'Montserrat, sans-serif',
+                      },
+                    },
+                  },
+                },
               }}
             />
           )}
