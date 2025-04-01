@@ -71,13 +71,13 @@ function App() {
             >
               <span className={`${isTracking ? 'translate-x-6' : 'translate-x-1'} size-4 rounded-full bg-white transition`} />
             </Switch>
-            <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={(e) => setValue(e.target.value)} />
+            <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Name of tab' onChange={(e) => setValue(e.target.value)} />
             <GrAnalytics color='#2563eb' size='20' onClick={() => {setView("details"); setValue("")}} />
           </div>
           <ul className="w-[90%]">
             <li className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm font-bold">
               <div>
-                <span>Celkový čas</span>
+                <span>Total time</span>
               </div>
               <span>{formatTime(totalTime)}</span>
             </li>

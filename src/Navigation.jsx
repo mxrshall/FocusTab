@@ -36,7 +36,7 @@ function App() {
                 >
                   <span className={`${enabled ? 'translate-x-6' : 'translate-x-1'} size-4 rounded-full bg-white transition`} />
                 </Switch>
-                <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Názov' onChange={handleChange}/>
+                <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Name of tab' onChange={handleChange}/>
                 <GrAnalytics color='#2563eb' size='20' onClick={() => setView("details")} />
               </div>
   );
