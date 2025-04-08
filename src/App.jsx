@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GrAnalytics } from "react-icons/gr";
 import { Switch } from '@headlessui/react';
+import background from "./assets/background.jpeg"
 import Details from "./Details";
 
 const formatTime = (ms) => {
@@ -62,27 +63,28 @@ function App() {
   return (
     <div>
       {view === "home" ? (
-        <div className="w-[500px] flex flex-col justify-center items-center bg-[#212329] text-white">
+        <div className="w-[500px] bg-cover bg-center flex justify-center items-center flex-col text-white" style={{ backgroundImage: `url(${background})` }}>
+          <div className='w-full h-full bg-black bg-opacity-20 backdrop-blur-md shadow-lg flex justify-center items-center flex-col'>
           <div className='w-full flex justify-between items-center px-6'>
             <Switch
               checked={isTracking}
               onChange={toggleTracking}
-              className={`${isTracking ? 'bg-blue-600' : 'bg-[#3f3f3f]'} group inline-flex h-6 w-11 items-center rounded-full transition my-4`}
+              className={`${isTracking ? 'bg-green-500' : 'bg-red-400'} group inline-flex h-6 w-11 items-center rounded-full transition my-4`}
             >
               <span className={`${isTracking ? 'translate-x-6' : 'translate-x-1'} size-4 rounded-full bg-white transition`} />
             </Switch>
             <input className='w-1/2 h-7 bg-white text-black my-4 rounded-lg p-2 border outline-none focus:outline-none focus:ring-0 focus:border-transparent' placeholder='Name of tab' onChange={(e) => setValue(e.target.value)} />
-            <GrAnalytics color='#2563eb' size='20' onClick={() => {setView("details"); setValue("")}} />
+            <GrAnalytics color='white' size='20' onClick={() => {setView("details"); setValue("")}} />
           </div>
           <ul className="w-[90%]">
-            <li className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm font-bold">
+            <li className="w-full flex justify-between bg-white  p-2 text-[#a5c6cb] mb-2 rounded-sm font-bold">
               <div>
                 <span>Total time</span>
               </div>
               <span>{formatTime(totalTime)}</span>
             </li>
             {sortedDomains.map((domain) => (
-              <li key={domain} className="w-full flex justify-between bg-[#3f3f3f] p-2 text-white mb-2 rounded-sm">
+              <li key={domain} className="w-full flex justify-between bg-white p-2 text-[#a5c6cb] mb-2 rounded-sm font-semibold">
                 <div>
                   <span>{domain}</span>
                 </div>
@@ -90,6 +92,7 @@ function App() {
               </li>
             ))}
           </ul>
+          </div>
         </div>
       ) : (
         <Details onBack={() => setView("home")} isTracking={isTracking} toggleTracking={toggleTracking} />
